@@ -686,7 +686,7 @@ static FUNC_SEND(backward_call_ind_transmit)
 	if (c->local_echocontrol_ind)
 		parm[1] |= 0x20;
 
-        if (ss7->flags | SS7_ISDN_ACCES_INDICATOR)
+	if (ss7->flags | SS7_ISDN_ACCES_INDICATOR)
 		parm[1] |= 0x10;
 
 	return 2;
