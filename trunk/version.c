@@ -5,7 +5,7 @@
 
 #include "libss7.h"
 
-static const char ss7_version[] = "SVN-mattf-bug13495-r227";
+static const char ss7_version[] = "SVN--r";
 
 const char *ss7_get_version(void)
 {

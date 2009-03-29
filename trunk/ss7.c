@@ -344,7 +344,7 @@ struct ss7 *ss7_new(int switchtype)
 	
 	s->linkset_up_timer = -1;
 	
-	s->flags = 0;
+	s->flags = SS7_ISDN_ACCES_INDICATOR;
 	s->sls_shift = 0;
 
 	return s;
