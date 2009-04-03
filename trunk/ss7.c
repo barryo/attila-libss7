@@ -565,8 +565,8 @@ void ss7_show_linkset(struct ss7 *ss7, void (* cust_printf)(int fd, const char *
 	for (j = 0; j < ss7->numsps; j++) {
 		adj_sp = ss7->adj_sps[j];
 		cust_printf(fd, "  ---------------------------------\n  Adjecent SP PC: %i STATE: %s\n", adj_sp->adjpc, mtp3_state(adj_sp->state));
-		cust_printf(fd, "  TRA:  %s%s    T19: %s\n", (adj_sp->tra & GOT) ? "GOT " : "", (adj_sp->tra & SENT) ? "SENT" : "",
-				(adj_sp->timer_t19 > -1) ? "running" : "not running");
+		cust_printf(fd, "  TRA:  %s%s    T19: %s T21: %s\n", (adj_sp->tra & GOT) ? "GOT " : "", (adj_sp->tra & SENT) ? "SENT" : "",
+				(adj_sp->timer_t19 > -1) ? "running" : "not running", adj_sp->timer_t21 >-1 ? "running" : "not running");
 
 		cust_printf(fd, "  Routes:\n");
 		cust_printf(fd, "    DPC       State        T6       T10\n");
