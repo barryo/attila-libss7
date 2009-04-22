@@ -4023,7 +4023,7 @@ int isup_grs(struct ss7 *ss7, struct isup_call *c, int endcic)
 	res = isup_send_message(ss7, c, ISUP_GRS, greset_params);
 
 	if (res > -1) {
-		c->got_sent_msg |= ISUP_SENT_GRS;
+		c->got_sent_msg = ISUP_SENT_GRS;
 		c->sent_grs_endcic = endcic;
 		isup_stop_all_timers(ss7, c);
 		isup_start_timer(ss7, c, ISUP_TIMER_T22);
