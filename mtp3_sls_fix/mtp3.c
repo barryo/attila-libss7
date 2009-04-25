@@ -340,7 +340,7 @@ static void std_test_send(struct mtp2 *link)
 	rl.type = ss7->switchtype;
 	rl.opc = ss7->pc;
 	rl.dpc = link->dpc;
-	rl.sls = link->slc;
+	rl.sls = link->net_mng_sls;
 
 	rllen = set_routinglabel(layer4, &rl);
 	layer4 += rllen;
@@ -352,7 +352,7 @@ static void std_test_send(struct mtp2 *link)
 
 	ss7_msg_userpart_len(m, rllen + testlen + 2);
 
-	if (mtp3_transmit(link->master, (ss7->switchtype == SS7_ITU) ? SIG_STD_TEST : SIG_SPEC_TEST, rl, m) > -1 &&
+	if (mtp3_transmit(link->master, (ss7->switchtype == SS7_ITU) ? SIG_STD_TEST : SIG_SPEC_TEST, rl, m, link) > -1 &&
 		link->master->mtp3_timers[MTP3_TIMER_Q707_T1] > 0) {
 		if (link->mtp3_timer[MTP3_TIMER_Q707_T1] > -1)
 			ss7_schedule_del(ss7, &link->mtp3_timer[MTP3_TIMER_Q707_T1]);
@@ -612,7 +612,7 @@ static void mtp3_transmit_buffer(struct ss7 *ss7, struct ss7_msg **buf)
 		next = cur->next;
 		userpart = get_userpart(cur->buf[MTP2_SIZE]);
 		get_routinglabel(ss7->switchtype, cur->buf + MTP2_SIZE + 1, &rl);
-		mtp3_transmit(ss7, userpart, rl, cur);
+		mtp3_transmit(ss7, userpart, rl, cur, NULL);
 		cur = next;
 	}
 	*buf = NULL;
@@ -927,7 +927,7 @@ static void mtp3_t10_expired(void *data)
 	
 	rl.dpc = adj_sp->adjpc;
 	rl.opc = ss7->pc;
-	rl.sls = adj_sp->links[0]->slc;
+	rl.sls = adj_sp->links[0]->net_mng_sls;
 	
 	net_mng_send(adj_sp->links[0], NET_MNG_RST, rl, route->dpc);
 	route->t10 = ss7_schedule_event(ss7, ss7->mtp3_timers[MTP3_TIMER_T10], &mtp3_t10_expired, route);
@@ -1075,7 +1075,8 @@ static int net_mng_receive(struct ss7 *ss7, struct mtp2 *mtp2, struct routing_la
 	unsigned char *headerptr = buf + rl_size(ss7);
 	unsigned char *paramptr = headerptr + 1;
 	struct routing_label rlr;
-	struct mtp2 *winner = slc_to_mtp2(mtp2->master, rl->sls);
+	/* struct mtp2 *winner = slc_to_mtp2(mtp2->master, rl->sls); */
+	struct mtp2 *winner = mtp2;
 
 	if (!winner) {
 		ss7_error(ss7, "winner == NULL !!!\n");
@@ -1392,6 +1393,7 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 	layer4 = ss7_msg_userpart(m);
 	rl.type = ss7->switchtype;
 	rl.opc = ss7->pc;
+	rl.sls = link->net_mng_sls;
 
 	rllen = set_routinglabel(layer4, &rl);
 	layer4 += rllen;
@@ -1521,41 +1523,41 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 	
 	if (can_reroute == 2) { /* COA, ECA try send back on the same link, if available */
 		if (link->std_test_passed) {
-			if ((h0h1 == (NET_MNG_COA) || (h0h1 == (NET_MNG_ECA))) && link->slc == rl.sls)
+			if ((h0h1 == (NET_MNG_COA) || (h0h1 == (NET_MNG_ECA))) && link->net_mng_sls == rl.sls)
 				ss7_error(ss7, "The adjecent SP %i sent COO, ECO on the same link: %i, we answer on another!!\n", rl.dpc, rl.sls);
 			else {
-				rl.sls = link->slc;
-				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m);
+				rl.sls = link->net_mng_sls;
+				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link);
 			}
 		}
 		
 		for (i = 0; i < ss7->numlinks; i++) {
 			if (ss7->links[i]->std_test_passed && ss7->links[i] != link) {
-				rl.sls = ss7->links[i]->slc;
-				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m);
+				rl.sls = ss7->links[i]->net_mng_sls;
+				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, ss7->links[i]);
 			}
 		}
 		
 	} else if (can_reroute == 1) { /* 1st try to send COO, CBD, ECO via another link */
 		for (i = 0; i < ss7->numlinks; i++)
 			if (ss7->links[i]->std_test_passed && ss7->links[i] != link) {
-				rl.sls = ss7->links[i]->slc;
-				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m);
+				rl.sls = ss7->links[i]->net_mng_sls;
+				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, ss7->links[i]);
 			}
 		if (i == ss7->numlinks && link->std_test_passed) {
-			rl.sls = link->slc;
-			return mtp3_transmit(ss7, SIG_NET_MNG, rl, m); /* if no available another links */
+			rl.sls = link->net_mng_sls;
+			return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link); /* if no available another links */
 		}
 	} else {
 		if (link->std_test_passed) {
-			rl.sls = link->slc;
-			return mtp3_transmit(ss7, SIG_NET_MNG, rl, m);
+			rl.sls = link->net_mng_sls;
+			return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link);
 		} else {
 			/* we may use another link to the same adjecent sp */
 			for (i = 0; i < link->adj_sp->numlinks; i++) {
 				if (link->adj_sp->links[i]->std_test_passed) {
-					rl.sls = link->adj_sp->links[i]->slc;
-					return mtp3_transmit(ss7, SIG_NET_MNG, rl, m);
+					rl.sls = link->adj_sp->links[i]->net_mng_sls;
+					return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link->adj_sp->links[i]);
 				}
 			}
 		}
@@ -1607,9 +1609,11 @@ static int std_test_receive(struct ss7 *ss7, struct mtp2 *mtp2, unsigned char *b
 	 * I hate that we would have to do this, but it would seem that
 	 * some telcos set things up stupid enough that we have to
 	 */
-	drl.sls = rl.sls;
+	/* drl.sls = rl.sls; */
 #endif
-	
+
+	drl.sls = mtp2->net_mng_sls;
+
 	h1 = h0 = *headerptr;
 
 	h1 = get_h1(headerptr);
@@ -1643,7 +1647,7 @@ static int std_test_receive(struct ss7 *ss7, struct mtp2 *mtp2, unsigned char *b
 		
 		ss7_msg_userpart_len(m, rllen + testpatsize + 2);
 
-		mtp3_transmit(ss7, (ss7->switchtype == SS7_ITU) ? SIG_STD_TEST : SIG_SPEC_TEST, drl, m);
+		mtp3_transmit(ss7, (ss7->switchtype == SS7_ITU) ? SIG_STD_TEST : SIG_SPEC_TEST, drl, m, mtp2);
 
 		/* Update linkstate */
 		mtp3_setstate_mtp2link(ss7, mtp2, MTP2_LINKSTATE_UP);
@@ -1700,7 +1704,7 @@ static int mtp3_to_buffer(struct ss7_msg **buf, struct ss7_msg *m)
 	return 0;
 }
 
-int mtp3_transmit(struct ss7 *ss7, unsigned char userpart, struct routing_label rl, struct ss7_msg *m)
+int mtp3_transmit(struct ss7 *ss7, unsigned char userpart, struct routing_label rl, struct ss7_msg *m, struct mtp2 *link)
 {
 	unsigned char *sio;
 	unsigned char *sif;
@@ -1714,7 +1718,7 @@ int mtp3_transmit(struct ss7 *ss7, unsigned char userpart, struct routing_label 
 	if (userpart == SIG_ISUP)
 		winner = rl_to_link(ss7, rl, &buffer);
 	else
-		winner = slc_to_mtp2(ss7, rl.sls);
+		winner = link;
 
 	if (ss7->switchtype == SS7_ITU)
 		(*sio) = (ss7->ni << 6) | userpart;
@@ -1844,20 +1848,16 @@ static struct mtp2 * slc_to_mtp2(struct ss7 *ss7, unsigned int slc)
 
 ss7_event * mtp3_process_event(struct ss7 *ss7, ss7_event *e)
 {
-	struct mtp2 *link;
-
 	/* Check to see if there is no event to process */
 	if (!e)
 		return NULL;
 
 	switch (e->e) {
 		case MTP2_LINK_UP:
-			link = slc_to_mtp2(ss7, e->gen.data);
-			mtp3_event_link_up(link);
+			mtp3_event_link_up(e->link.link);
 			return e;
 		case MTP2_LINK_DOWN:
-			link = slc_to_mtp2(ss7, e->gen.data);
-			mtp3_event_link_down(link);
+			mtp3_event_link_down(e->link.link);
 			return e;
 		default:
 			return e;
@@ -2064,6 +2064,7 @@ static inline void mtp3_add_link_adjsps(struct adjecent_sp *adj_sp, struct mtp2 
 	for (i = 0; i < adj_sp->numlinks; i++) {
 		if (!adj_sp->links[i]) {
 			adj_sp->links[i] = link;
+			adj_sp->links[i]->net_mng_sls = adj_sp->numlinks - 1;
 			break;
 		}
 	}

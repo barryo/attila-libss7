@@ -195,7 +195,7 @@ int mtp3_receive(struct ss7 *ss7, struct mtp2 *link, void *msg, int len);
 int mtp3_dump(struct ss7 *ss7, struct mtp2 *link, void *msg, int len);
 
 /* Transmit */
-int mtp3_transmit(struct ss7 *ss7, unsigned char userpart, struct routing_label rl, struct ss7_msg *m);
+int mtp3_transmit(struct ss7 *ss7, unsigned char userpart, struct routing_label rl, struct ss7_msg *m, struct mtp2 *link);
 
 void mtp3_alarm(struct ss7 *ss7, int fd);
 

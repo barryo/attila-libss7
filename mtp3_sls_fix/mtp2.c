@@ -618,8 +618,8 @@ int mtp2_setstate(struct mtp2 *link, int newstate)
 						mtp_error(link->master, "Could not queue event\n");
 						return -1;
 					}
-					e->gen.e = MTP2_LINK_UP;
-					e->gen.data = link->slc;
+					e->link.e = MTP2_LINK_UP;
+					e->link.link = link;
 					break;
 				default:
 					mtp_error(link->master, "Don't know how to handle state change from %d to %d\n", link->state, newstate);
@@ -634,8 +634,8 @@ int mtp2_setstate(struct mtp2 *link, int newstate)
 					mtp_error(link->master, "Could not queue event\n");
 					return -1;
 				}
-				e->gen.e = MTP2_LINK_DOWN;
-				e->gen.data = link->slc;
+				e->link.e = MTP2_LINK_DOWN;
+				e->link.link = link;
 				return to_idle(link);
 			}
 			break;

@@ -590,7 +590,7 @@ void ss7_show_linkset(struct ss7 *ss7, void (* cust_printf)(int fd, const char *
 				}
 			}
 
-			cust_printf(fd, "  Link SLC: %i\n", link->slc);
+			cust_printf(fd, "  Link SLC: %i NetMngSLS: %i\n", link->slc, link->net_mng_sls);
 			cust_printf(fd, "    State:      %s,  %s\n", linkstate2strext(link->state), mtp2state2str(ss7, link));
 			cust_printf(fd, "    STD Test:  %s\n", link->std_test_passed ? "passed" : "failed");
 			cust_printf(fd, "    Got, sent :%s\n", got_sent2str(got_sent_buf, link->got_sent_netmsg));
