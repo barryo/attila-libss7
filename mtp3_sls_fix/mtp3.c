@@ -340,7 +340,7 @@ static void std_test_send(struct mtp2 *link)
 	rl.type = ss7->switchtype;
 	rl.opc = ss7->pc;
 	rl.dpc = link->dpc;
-	rl.sls = link->net_mng_sls;
+	rl.sls = link->std_test_sls;
 
 	rllen = set_routinglabel(layer4, &rl);
 	layer4 += rllen;
@@ -1075,8 +1075,8 @@ static int net_mng_receive(struct ss7 *ss7, struct mtp2 *mtp2, struct routing_la
 	unsigned char *headerptr = buf + rl_size(ss7);
 	unsigned char *paramptr = headerptr + 1;
 	struct routing_label rlr;
-	/* struct mtp2 *winner = slc_to_mtp2(mtp2->master, rl->sls); */
-	struct mtp2 *winner = mtp2;
+	struct mtp2 *winner = slc_to_mtp2(mtp2->master, rl->sls); /* changeover, changeback!!! */
+	/* struct mtp2 *winner = mtp2; */
 
 	if (!winner) {
 		ss7_error(ss7, "winner == NULL !!!\n");
@@ -1271,12 +1271,12 @@ static int net_mng_receive(struct ss7 *ss7, struct mtp2 *mtp2, struct routing_la
 			}
 			return 0;
 		case NET_MNG_TFP:
-			mtp3_add_set_route(winner->adj_sp, pc2int(ss7->switchtype, paramptr), TFP);
+			mtp3_add_set_route(mtp2->adj_sp, pc2int(ss7->switchtype, paramptr), TFP);
 			return 0;
 		case NET_MNG_TFR:
 			return 0;
 		case NET_MNG_TFA:
-			mtp3_add_set_route(winner->adj_sp, pc2int(ss7->switchtype, paramptr), TFA);
+			mtp3_add_set_route(mtp2->adj_sp, pc2int(ss7->switchtype, paramptr), TFA);
 			return 0;
 		default:
 			ss7_error(ss7, "Unkonwn NET MNG %u on link SLC: %i from ADJPC: %i\n", *headerptr, winner->slc, winner->dpc);
@@ -1609,10 +1609,8 @@ static int std_test_receive(struct ss7 *ss7, struct mtp2 *mtp2, unsigned char *b
 	 * I hate that we would have to do this, but it would seem that
 	 * some telcos set things up stupid enough that we have to
 	 */
-	/* drl.sls = rl.sls; */
+	drl.sls = rl.sls;
 #endif
-
-	drl.sls = mtp2->net_mng_sls;
 
 	h1 = h0 = *headerptr;
 
@@ -2064,7 +2062,7 @@ static inline void mtp3_add_link_adjsps(struct adjecent_sp *adj_sp, struct mtp2 
 	for (i = 0; i < adj_sp->numlinks; i++) {
 		if (!adj_sp->links[i]) {
 			adj_sp->links[i] = link;
-			adj_sp->links[i]->net_mng_sls = adj_sp->numlinks - 1;
+			adj_sp->links[i]->std_test_sls = adj_sp->numlinks - 1;
 			break;
 		}
 	}
