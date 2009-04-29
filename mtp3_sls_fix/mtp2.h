@@ -138,7 +138,6 @@ struct mtp2 {
 
 	int slc;
 	int net_mng_sls;
-	int std_test_sls;
 
 	int emergency;
 	int provingperiod;

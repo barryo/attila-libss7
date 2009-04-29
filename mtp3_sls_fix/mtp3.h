@@ -136,7 +136,7 @@
 
 #define AUTORL(rl, link) 			\
 	struct routing_label rl;			\
-	rl.sls = link->slc;						\
+	rl.sls = link->net_mng_sls;						\
 	rl.dpc = link->dpc;						\
 	rl.opc = link->master->pc;		\
 

@@ -221,7 +221,6 @@ int ss7_add_link(struct ss7 *ss7, int transport, int fd)
 			return -1;
 
 		m->slc = ss7->numlinks;
-		m->net_mng_sls = ss7->numlinks;
 		ss7->numlinks += 1;
 		m->master = ss7;
 		if (zapmtp2)
@@ -591,7 +590,7 @@ void ss7_show_linkset(struct ss7 *ss7, void (* cust_printf)(int fd, const char *
 				}
 			}
 
-			cust_printf(fd, "  Link SLC: %i NetMngSLS: %i StdTestSLS %i\n", link->slc, link->net_mng_sls, link->std_test_sls);
+			cust_printf(fd, "  Link SLC: %i NetMngSLS: %i\n", link->slc, link->net_mng_sls);
 			cust_printf(fd, "    State:      %s,  %s\n", linkstate2strext(link->state), mtp2state2str(ss7, link));
 			cust_printf(fd, "    STD Test:  %s\n", link->std_test_passed ? "passed" : "failed");
 			cust_printf(fd, "    Got, sent :%s\n", got_sent2str(got_sent_buf, link->got_sent_netmsg));

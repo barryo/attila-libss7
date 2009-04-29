@@ -340,7 +340,7 @@ static void std_test_send(struct mtp2 *link)
 	rl.type = ss7->switchtype;
 	rl.opc = ss7->pc;
 	rl.dpc = link->dpc;
-	rl.sls = link->std_test_sls;
+	rl.sls = link->net_mng_sls;
 
 	rllen = set_routinglabel(layer4, &rl);
 	layer4 += rllen;
@@ -754,9 +754,6 @@ void mtp3_init_restart(struct ss7 *ss7, int slc)
 	if (adj_sp->timer_t21 > -1)
 		ss7_schedule_del(ss7, &adj_sp->timer_t21);
 	
-	//AUTORL(rl, link);
-	//net_mng_send(link, NET_MNG_TRA, rl, 0);
-	
 	mtp3_restart(link);
 }
 
@@ -1070,13 +1067,25 @@ static void mtp3_add_set_route(struct adjecent_sp *adj_sp, unsigned short dpc, i
 	
 }
 
+static struct mtp2 * netmng_adjpc_sls_to_mtp2(struct ss7 *ss7, unsigned int adjpc, unsigned int sls)
+{
+	int i = 0;
+	struct mtp2 *link = NULL;
+
+	for (i = 0; i < ss7->numlinks; i++) {
+		if (ss7->links[i]->net_mng_sls == sls && ss7->links[i]->dpc == adjpc)
+			link = ss7->links[i];
+	}
+
+	return link;
+}
+
 static int net_mng_receive(struct ss7 *ss7, struct mtp2 *mtp2, struct routing_label *rl, unsigned char *buf, int len)
 {
 	unsigned char *headerptr = buf + rl_size(ss7);
 	unsigned char *paramptr = headerptr + 1;
 	struct routing_label rlr;
-	struct mtp2 *winner = slc_to_mtp2(mtp2->master, rl->sls); /* changeover, changeback!!! */
-	/* struct mtp2 *winner = mtp2; */
+	struct mtp2 *winner = netmng_adjpc_sls_to_mtp2(mtp2->master, rl->dpc, rl->sls); /* changeover, changeback!!! */
 
 	if (!winner) {
 		ss7_error(ss7, "winner == NULL !!!\n");
@@ -1393,7 +1402,6 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 	layer4 = ss7_msg_userpart(m);
 	rl.type = ss7->switchtype;
 	rl.opc = ss7->pc;
-	rl.sls = link->net_mng_sls;
 
 	rllen = set_routinglabel(layer4, &rl);
 	layer4 += rllen;
@@ -1526,7 +1534,6 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 			if ((h0h1 == (NET_MNG_COA) || (h0h1 == (NET_MNG_ECA))) && link->net_mng_sls == rl.sls)
 				ss7_error(ss7, "The adjecent SP %i sent COO, ECO on the same link: %i, we answer on another!!\n", rl.dpc, rl.sls);
 			else {
-				rl.sls = link->net_mng_sls;
 				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link);
 			}
 		}
@@ -1541,22 +1548,19 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 	} else if (can_reroute == 1) { /* 1st try to send COO, CBD, ECO via another link */
 		for (i = 0; i < ss7->numlinks; i++)
 			if (ss7->links[i]->std_test_passed && ss7->links[i] != link) {
-				rl.sls = ss7->links[i]->net_mng_sls;
 				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, ss7->links[i]);
 			}
+
 		if (i == ss7->numlinks && link->std_test_passed) {
-			rl.sls = link->net_mng_sls;
 			return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link); /* if no available another links */
 		}
 	} else {
 		if (link->std_test_passed) {
-			rl.sls = link->net_mng_sls;
 			return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link);
 		} else {
 			/* we may use another link to the same adjecent sp */
 			for (i = 0; i < link->adj_sp->numlinks; i++) {
 				if (link->adj_sp->links[i]->std_test_passed) {
-					rl.sls = link->adj_sp->links[i]->net_mng_sls;
 					return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link->adj_sp->links[i]);
 				}
 			}
@@ -2062,7 +2066,7 @@ static inline void mtp3_add_link_adjsps(struct adjecent_sp *adj_sp, struct mtp2 
 	for (i = 0; i < adj_sp->numlinks; i++) {
 		if (!adj_sp->links[i]) {
 			adj_sp->links[i] = link;
-			adj_sp->links[i]->std_test_sls = adj_sp->numlinks - 1;
+			adj_sp->links[i]->net_mng_sls = adj_sp->numlinks - 1;
 			break;
 		}
 	}
