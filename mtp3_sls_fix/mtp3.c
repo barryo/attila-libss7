@@ -1391,7 +1391,7 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 	unsigned char *layer4;
 	struct ss7 *ss7 = link->master;
 	int rllen = 0;
-	int can_reroute = 0, i;
+	int i, res;
 	
 	m = ss7_msg_new();
 	if (!m) {
@@ -1410,7 +1410,6 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 
 	switch (h0h1) {
 		case NET_MNG_CBD:
-			can_reroute = 1;
 			link->got_sent_netmsg |= SENT_CBD;
 			if (ss7->mtp3_timers[MTP3_TIMER_T4] > 0 &&
 				link->mtp3_timer[MTP3_TIMER_T4] == -1) { /* if 0 called from mtp3_t4_expired() */
@@ -1422,12 +1421,10 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 			ss7_msg_userpart_len(m, rllen + 1 + 1); /* rl + CB code */
 			break;
 		case NET_MNG_CBA:
-			can_reroute = 2;
 			*layer4 = (unsigned char) param; /* CB code */
 			ss7_msg_userpart_len(m, rllen + 1 + 1); /* rl + CB code */
 			break;
 		case NET_MNG_COO:
-			can_reroute = 1;
 			link->got_sent_netmsg |= SENT_COO;
 			if (ss7->mtp3_timers[MTP3_TIMER_T2]) {
 				if (link->mtp3_timer[MTP3_TIMER_T2] > 0)
@@ -1439,7 +1436,6 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 			ss7_msg_userpart_len(m, rllen + 1 + 1); /* rl + FSN of last accepted MSU */
 			break;
 		case NET_MNG_COA:
-			can_reroute = 2;
 			*layer4 = (unsigned char) param; /* FSN of last accepted MSU */
 			ss7_msg_userpart_len(m, rllen + 1 + 1); /* rl + FSN of last accepted MSU */
 			break;
@@ -1480,7 +1476,6 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 			ss7_msg_userpart_len(m, rllen + 1); /* no more params */
 			break;
 		case NET_MNG_ECO:
-			can_reroute = 1;
 			link->got_sent_netmsg |= SENT_ECO;
 			if (ss7->mtp3_timers[MTP3_TIMER_T2]) {
 				if (link->mtp3_timer[MTP3_TIMER_T2] > -1)
@@ -1491,7 +1486,6 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 			ss7_msg_userpart_len(m, rllen + 1); /* no more params */
 			break;
 		case NET_MNG_ECA:
-			can_reroute = 2;
 			ss7_msg_userpart_len(m, rllen + 1); /* no more params */
 			break;
 		case NET_MNG_LFU:
@@ -1529,43 +1523,33 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 	}
 
 	
-	if (can_reroute == 2) { /* COA, ECA try send back on the same link, if available */
-		if (link->std_test_passed) {
-			if ((h0h1 == (NET_MNG_COA) || (h0h1 == (NET_MNG_ECA))) && link->net_mng_sls == rl.sls)
-				ss7_error(ss7, "The adjecent SP %i sent COO, ECO on the same link: %i, we answer on another!!\n", rl.dpc, rl.sls);
-			else {
-				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link);
-			}
-		}
-		
-		for (i = 0; i < ss7->numlinks; i++) {
-			if (ss7->links[i]->std_test_passed && ss7->links[i] != link) {
-				rl.sls = ss7->links[i]->net_mng_sls;
-				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, ss7->links[i]);
-			}
-		}
-		
-	} else if (can_reroute == 1) { /* 1st try to send COO, CBD, ECO via another link */
-		for (i = 0; i < ss7->numlinks; i++)
-			if (ss7->links[i]->std_test_passed && ss7->links[i] != link) {
-				return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, ss7->links[i]);
-			}
-
-		if (i == ss7->numlinks && link->std_test_passed) {
-			return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link); /* if no available another links */
-		}
+	
+	if (link->std_test_passed) {
+		return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link);
 	} else {
-		if (link->std_test_passed) {
-			return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link);
-		} else {
-			/* we may use another link to the same adjecent sp */
-			for (i = 0; i < link->adj_sp->numlinks; i++) {
-				if (link->adj_sp->links[i]->std_test_passed) {
-					return mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link->adj_sp->links[i]);
-				}
+		/* we may use another link to the same adjecent sp */
+		res = -1;
+		for (i = 0; i < link->adj_sp->numlinks; i++) {
+			if (link->adj_sp->links[i]->std_test_passed) {
+				res = mtp3_transmit(ss7, SIG_NET_MNG, rl, m, link->adj_sp->links[i]);
 			}
 		}
-		
+
+		if (res != -1)
+			return res;
+		else {
+			/* if we couldn't send changeover.... */
+			if (link->got_sent_netmsg | SENT_COO | SENT_ECO) {
+				link->got_sent_netmsg &= ~(SENT_COO | SENT_ECO);
+				if (link->mtp3_timer[MTP3_TIMER_T2] > 0)
+					ss7_schedule_del(ss7, &link->mtp3_timer[MTP3_TIMER_T2]);
+
+				ss7_message(ss7, "No more signalling link to adjecent sp %d, timed changeover initiated\n", link->dpc);
+				mtp3_timed_changeover(link);
+				return -1;
+			}
+		}
+
 	}
 
 	ss7_error(link->master, "No signalling link available for NET MNG:%s !!!\n", net_mng_message2str(h0h1 & 0x0f, h0h1 >> 4));
