@@ -137,6 +137,7 @@ struct mtp2 {
 	struct mtp2_timers timers;
 
 	int slc;
+	int net_mng_sls;
 
 	int emergency;
 	int provingperiod;

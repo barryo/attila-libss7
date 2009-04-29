@@ -337,6 +337,11 @@ typedef struct {
 
 typedef struct {
 	int e;
+	struct mtp2 *link;
+} ss7_event_link;
+
+typedef struct {
+	int e;
 	int cic;
 	unsigned int opc;
 	unsigned char event;
@@ -379,6 +384,7 @@ typedef struct {
 typedef union {
 	int e;
 	ss7_event_generic gen;
+	ss7_event_link link;
 	ss7_event_iam iam;
 	ss7_event_cicrange grs;
 	ss7_event_cicrange cqm;
