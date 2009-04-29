@@ -1539,7 +1539,7 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 			return res;
 		else {
 			/* if we couldn't send changeover.... */
-			if (link->got_sent_netmsg | SENT_COO | SENT_ECO) {
+			if (link->got_sent_netmsg & (SENT_COO | SENT_ECO)) {
 				link->got_sent_netmsg &= ~(SENT_COO | SENT_ECO);
 				if (link->mtp3_timer[MTP3_TIMER_T2] > 0)
 					ss7_schedule_del(ss7, &link->mtp3_timer[MTP3_TIMER_T2]);
@@ -1547,6 +1547,12 @@ int net_mng_send(struct mtp2 *link, unsigned char h0h1, struct routing_label rl,
 				ss7_message(ss7, "No more signalling link to adjecent sp %d, timed changeover initiated\n", link->dpc);
 				mtp3_timed_changeover(link);
 				return -1;
+			}
+
+			/* cancel changeback */
+			if (link->got_sent_netmsg & SENT_CBD) {
+				link->got_sent_netmsg &= ~SENT_CBD;
+				mtp3_cancel_changeback(link);
 			}
 		}
 
