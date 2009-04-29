@@ -1603,6 +1603,11 @@ static int std_test_receive(struct ss7 *ss7, struct mtp2 *mtp2, unsigned char *b
 	 * I hate that we would have to do this, but it would seem that
 	 * some telcos set things up stupid enough that we have to
 	 */
+
+	/*
+	 * The numbering of the sls have to restart on every STP!!!
+	 */
+
 	drl.sls = rl.sls;
 #endif
 
