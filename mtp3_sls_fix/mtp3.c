@@ -1085,7 +1085,7 @@ static int net_mng_receive(struct ss7 *ss7, struct mtp2 *mtp2, struct routing_la
 	unsigned char *headerptr = buf + rl_size(ss7);
 	unsigned char *paramptr = headerptr + 1;
 	struct routing_label rlr;
-	struct mtp2 *winner = netmng_adjpc_sls_to_mtp2(mtp2->master, rl->dpc, rl->sls); /* changeover, changeback!!! */
+	struct mtp2 *winner = netmng_adjpc_sls_to_mtp2(mtp2->master, rl->opc, rl->sls); /* changeover, changeback!!! */
 
 	if (!winner) {
 		ss7_error(ss7, "winner == NULL !!!\n");
