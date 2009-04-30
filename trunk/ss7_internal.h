@@ -41,7 +41,7 @@
 /* ISUP parameters */
 
 /* ISUP Timers */
-#define ISUP_MAX_TIMERS 512
+#define ISUP_MAX_TIMERS 64
 
 /* Information Transfer Capability */
 #define ISUP_TRANSCAP_SPEECH 0x00
