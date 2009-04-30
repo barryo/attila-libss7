@@ -3413,6 +3413,7 @@ int isup_receive(struct ss7 *ss7, struct mtp2 *link, struct routing_label *rl, u
 			isup_stop_timer(ss7, c, ISUP_TIMER_T2);
 			isup_stop_timer(ss7, c, ISUP_TIMER_T6);
 			isup_stop_timer(ss7, c, ISUP_TIMER_T35);
+			isup_stop_timer(ss7, c, ISUP_TIMER_DIGITTIMEOUT);
 			c->got_sent_msg &= ~(ISUP_CALL_CONNECTED | ISUP_SENT_IAM | ISUP_GOT_IAM | ISUP_GOT_CCR | ISUP_SENT_INR);
 			e->e = ISUP_EVENT_REL;
 			e->rel.cic = c->cic;
@@ -4216,6 +4217,7 @@ int isup_acm(struct ss7 *ss7, struct isup_call *c)
 	if (res > -1) {
 		c->got_sent_msg |= ISUP_SENT_ACM;
 		isup_stop_timer(ss7, c, ISUP_TIMER_T35);
+		isup_stop_timer(ss7, c, ISUP_TIMER_DIGITTIMEOUT);
 	} else {
 		ss7_call_null(ss7, c, 0);
 		isup_free_call(ss7, c);
@@ -4278,6 +4280,7 @@ int isup_anm(struct ss7 *ss7, struct isup_call *c)
 	if (res > -1) {
 		c->got_sent_msg |= ISUP_SENT_ANM;
 		isup_stop_timer(ss7, c, ISUP_TIMER_T35);
+		isup_stop_timer(ss7, c, ISUP_TIMER_DIGITTIMEOUT);
 	} else {
 		ss7_call_null(ss7, c, 0);
 		isup_free_call(ss7, c);
@@ -4295,11 +4298,11 @@ int isup_con(struct ss7 *ss7, struct isup_call *c)
 
 	c->got_sent_msg |= ISUP_SENT_CON;
 	isup_stop_timer(ss7, c, ISUP_TIMER_T35);
+	isup_stop_timer(ss7, c, ISUP_TIMER_DIGITTIMEOUT);
 	res = isup_send_message(ss7, c, ISUP_CON, con_params);
 
 	if ( res > -1) {
 		c->got_sent_msg |= ISUP_SENT_CON;
-		isup_stop_timer(ss7, c, ISUP_TIMER_T35);
 	} else {
 		ss7_call_null(ss7, c, 0);
 		isup_free_call(ss7, c);
@@ -4331,6 +4334,7 @@ int isup_rel(struct ss7 *ss7, struct isup_call *c, int cause)
 		isup_stop_timer(ss7, c, ISUP_TIMER_T2);
 		isup_stop_timer(ss7, c, ISUP_TIMER_T6);
 		isup_stop_timer(ss7, c, ISUP_TIMER_T35);
+		isup_stop_timer(ss7, c, ISUP_TIMER_DIGITTIMEOUT);
 		isup_start_timer(ss7, c, ISUP_TIMER_T1);
 		isup_start_timer(ss7, c, ISUP_TIMER_T5);
 
@@ -4466,6 +4470,7 @@ int isup_cpg(struct ss7 *ss7, struct isup_call *c, int event)
 
 	if (res > -1) {
 		isup_stop_timer(ss7, c, ISUP_TIMER_T35);
+		isup_stop_timer(ss7, c, ISUP_TIMER_DIGITTIMEOUT);
 	} else {
 		ss7_call_null(ss7, c, 0);
 		isup_free_call(ss7, c);
@@ -4755,6 +4760,9 @@ static int isup_timer2str(int timer, char *res)
 		case ISUP_TIMER_T35:
 			strcpy (res, "t35");
 			return 4;
+		case ISUP_TIMER_DIGITTIMEOUT:
+			strcpy (res, "tdt");
+			return 3;
 		default:
 			strcpy (res, "unknown");
 		return 8;
@@ -4805,6 +4813,8 @@ int ss7_set_isup_timer(struct ss7 *ss7, char *name, int ms)
 		ss7->isup_timers[ISUP_TIMER_T33] = ms;
 	else if (!strcasecmp(name, "t35"))
 		ss7->isup_timers[ISUP_TIMER_T35] = ms;
+	else if (!strcasecmp(name, "digittimeout"))
+		ss7->isup_timers[ISUP_TIMER_DIGITTIMEOUT] = ms;
 	else {
 		ss7_message(ss7, "Unknown ISUP timer: %s\n", name);
 		return 0;
@@ -4818,6 +4828,7 @@ static void isup_timer_expiry(void *data)
 	struct isup_timer_param *param = data;
 	char buf[16];
 	int x;
+	ss7_event *e;
 
 	isup_timer2str(param->timer, buf);
 
@@ -4921,6 +4932,22 @@ static void isup_timer_expiry(void *data)
 			break;
 		case ISUP_TIMER_T35:
 			isup_rel(param->ss7, param->c, 28);
+			break;
+		case ISUP_TIMER_DIGITTIMEOUT:
+			e = ss7_next_empty_event(param->ss7);
+			if (!e) {
+				ss7_call_null(param->ss7, param->c, 1);
+				isup_free_call(param->ss7, param->c);
+				return;
+			}
+			break;
+			e->e = ISUP_EVENT_DIGITTIMEOUT;
+			e->digittimeout.cic = param->c->cic;
+			e->digittimeout.call = param->c;
+			e->digittimeout.opc = param->c->dpc;
+			e->digittimeout.cot_check_required = param->c->cot_check_required;
+			e->digittimeout.cot_performed_on_previous_cic = param->c->cot_performed_on_previous_cic;
+			e->digittimeout.cot_check_passed = param->c->cot_check_passed;
 			break;
 		default:
 			ss7_message (param->ss7, "timer expired, doing nothing\n");
@@ -5033,6 +5060,11 @@ void isup_clear_callflags(struct ss7 *ss7, struct isup_call *c, unsigned long fl
 		isup_stop_timer(ss7, c, ISUP_TIMER_T20);
 		isup_stop_timer(ss7, c, ISUP_TIMER_T21);
 	}
+}
+
+void isup_start_digittimeout(struct ss7 *ss7, struct isup_call *c)
+{
+	isup_start_timer(ss7, c, ISUP_TIMER_DIGITTIMEOUT);
 }
 
 /* Janelle is the bomb (Again) */

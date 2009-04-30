@@ -163,6 +163,8 @@
 #define ISUP_TIMER_T33 33
 #define ISUP_TIMER_T35 35
 
+#define ISUP_TIMER_DIGITTIMEOUT 63
+
 /* ISUP Parameter Pseudo-type */
 struct isup_parm_opt {
 	unsigned char type;
