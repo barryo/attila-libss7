@@ -311,6 +311,10 @@ char * ss7_event2str(int event)
 			return "ISUP_EVENT_GRA";
 		case ISUP_EVENT_CON:
 			return "ISUP_EVENT_CON";
+		case ISUP_EVENT_SAM:
+			return "ISUP_EVENT_SAM";
+		case ISUP_EVENT_DIGITTIMEOUT:
+			return "ISUP_EVENT_DIGITTIMEOUT";
 		default:
 			return "Unknown Event";
 	}

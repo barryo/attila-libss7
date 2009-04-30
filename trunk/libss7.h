@@ -70,6 +70,8 @@
 #define ISUP_EVENT_RES		33
 #define ISUP_EVENT_SAM		34
 
+#define ISUP_EVENT_DIGITTIMEOUT 35
+
 /* ISUP MSG Flags */
 #define ISUP_SENT_GRS (1 << 0)
 #define ISUP_SENT_CGB (1 << 1)
@@ -381,6 +383,16 @@ typedef struct {
 	struct isup_call *call;
 } ss7_event_sam;
 
+typedef struct {
+	int e;
+	int cic;
+	unsigned int opc;
+	int cot_check_required;
+	int cot_check_passed;
+	int cot_performed_on_previous_cic;
+	struct isup_call *call;
+} ss7_event_digittimout;
+
 typedef union {
 	int e;
 	ss7_event_generic gen;
@@ -413,6 +425,7 @@ typedef union {
 	ss7_event_cic lpa;
 	ss7_event_susres susres;
 	ss7_event_sam sam;
+	ss7_event_digittimout digittimeout;
 } ss7_event;
 
 void ss7_set_message(void (*func)(struct ss7 *ss7, char *message));
@@ -477,6 +490,8 @@ int ss7_set_mtp3_timer(struct ss7 *ss7, char *name, int ms);
 int ss7_set_isup_timer(struct ss7 *ss7, char *name, int ms);
 
 struct isup_call * isup_free_call_if_clear(struct ss7 *ss7, struct isup_call *c);
+
+void isup_start_digittimeout(struct ss7 *ss7, struct isup_call *c);
 
 /* Send an IAM */
 int isup_iam(struct ss7 *ss7, struct isup_call *c);
