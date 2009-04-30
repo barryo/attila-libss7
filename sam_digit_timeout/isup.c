@@ -4940,7 +4940,7 @@ static void isup_timer_expiry(void *data)
 				isup_free_call(param->ss7, param->c);
 				return;
 			}
-			break;
+
 			e->e = ISUP_EVENT_DIGITTIMEOUT;
 			e->digittimeout.cic = param->c->cic;
 			e->digittimeout.call = param->c;
