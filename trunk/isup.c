@@ -3517,6 +3517,8 @@ int isup_receive(struct ss7 *ss7, struct mtp2 *link, struct routing_label *rl, u
 			e->rlc.call = c;
 			e->rlc.got_sent_msg = c->got_sent_msg;
 			c->got_sent_msg &= ~(ISUP_SENT_REL | ISUP_SENT_RSC);
+			isup_stop_timer(ss7, c, ISUP_TIMER_T2);
+			isup_stop_timer(ss7, c, ISUP_TIMER_T6);
 			isup_stop_timer(ss7, c, ISUP_TIMER_T1);
 			isup_stop_timer(ss7, c, ISUP_TIMER_T5);
 			isup_stop_timer(ss7, c, ISUP_TIMER_T16);
@@ -3835,6 +3837,10 @@ int isup_receive(struct ss7 *ss7, struct mtp2 *link, struct routing_label *rl, u
 				ss7_message(ss7, "Got SUS but no call on CIC %d PC %d ", c->cic, opc);
 				return isup_handle_unexpected(ss7, c, opc);
 			}
+
+			if (c->got_sent_msg & (ISUP_SENT_RSC | ISUP_SENT_REL))
+				return 0; /* ignoring SUS we are in hangup now */
+
 			e = ss7_next_empty_event(ss7);
 			if (!e) {
 				ss7_call_null(ss7, c, 1);
