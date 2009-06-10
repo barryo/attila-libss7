@@ -430,6 +430,9 @@ static FUNC_SEND(forward_call_ind_transmit)
 	if (ss7->flags & SS7_ISDN_ACCES_INDICATOR)
 		parm [1] |= 0x01;
 
+	if (c->interworking_indicator)
+		parm[0] |= (1 << 3);
+
 	return 2;
 }
 
@@ -2614,6 +2617,11 @@ void isup_set_cug(struct isup_call *c, unsigned char cug_indicator, const char *
 	c->cug_indicator = cug_indicator;
 	strncpy(c->cug_interlock_ni, cug_interlock_ni, sizeof(c->cug_interlock_ni));
 	c->cug_interlock_code = cug_interlock_code;
+}
+
+void isup_set_interworking_indicator(struct isup_call *c, unsigned char interworking_indicator)
+{
+	c->interworking_indicator = interworking_indicator;
 }
 
 void isup_set_echocontrol(struct isup_call *c, unsigned char ec)

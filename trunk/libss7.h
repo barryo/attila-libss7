@@ -592,6 +592,8 @@ void isup_set_col_req(struct isup_call *c);
 
 void isup_set_cug(struct isup_call *c, unsigned char cug_indicator, const char *cug_interlock_ni, unsigned short cug_interlock_code);
 
+void isup_set_interworking_indicator(struct isup_call *c, unsigned char interworking_indicator);
+
 void isup_set_echocontrol(struct isup_call *c, unsigned char ec);
 
 enum {
