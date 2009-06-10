@@ -3266,7 +3266,7 @@ int isup_receive(struct ss7 *ss7, struct mtp2 *link, struct routing_label *rl, u
 		case ISUP_IAM:
 			return isup_event_iam(ss7, c, opc);
 		case ISUP_SAM:
-			if (c->got_sent_msg != ISUP_GOT_IAM) {
+			if  (!(c->got_sent_msg & ISUP_GOT_IAM)) {
 				ss7_message(ss7, "Got unexpected SAM  on CIC %d PC %d ", c->cic, opc);
 				return isup_handle_unexpected(ss7, c, opc);
 			}
