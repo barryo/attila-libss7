@@ -433,6 +433,9 @@ static FUNC_SEND(forward_call_ind_transmit)
 	if (c->interworking_indicator)
 		parm[0] |= (1 << 3);
 
+	if (c->forward_indicator_pmbits)
+		parm[1] |= (c->forward_indicator_pmbits & 0xf0);
+
 	return 2;
 }
 
@@ -497,6 +500,8 @@ static FUNC_DUMP(forward_call_ind_dump)
 	ss7_message(ss7, "\t\t\tISDN User Part Pref Ind: %s (%d)\n", hg_str, (parm[0] >> 6) & 3);
 	ss7_message(ss7, "\t\t\tISDN Access Ind: originating access %s (%d)\n", (parm[1] & 1) ? "ISDN" : "non-ISDN", parm[1] & 1);
 	ss7_message(ss7, "\t\t\tSCCP Method Ind: %s (%d)\n", kj_str, (parm[1] >> 1) & 3);
+	ss7_message(ss7, "\t\t\tP-M bits(%d) P: %d O: %d N: %d M: %d\n",  (parm[1] & 0xf0),
+		((parm[1] >> 7) & 0x1), ((parm[1] >> 6) & 0x1), ((parm[1] >> 5) & 0x1), ((parm[1] >> 4) & 0x1));
 	return 2;
 }
 
@@ -2622,6 +2627,11 @@ void isup_set_cug(struct isup_call *c, unsigned char cug_indicator, const char *
 void isup_set_interworking_indicator(struct isup_call *c, unsigned char interworking_indicator)
 {
 	c->interworking_indicator = interworking_indicator;
+}
+
+void isup_set_forward_indicator_pmbits(struct isup_call *c, unsigned char pmbits)
+{
+	c->forward_indicator_pmbits = pmbits;
 }
 
 void isup_set_echocontrol(struct isup_call *c, unsigned char ec)

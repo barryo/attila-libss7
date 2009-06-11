@@ -272,6 +272,7 @@ struct isup_call {
 	char cug_interlock_ni[5];
 	unsigned short cug_interlock_code;
 	unsigned char interworking_indicator;
+	unsigned char forward_indicator_pmbits;
 	int timer[ISUP_MAX_TIMERS];
 };
 

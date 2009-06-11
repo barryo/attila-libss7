@@ -594,6 +594,8 @@ void isup_set_cug(struct isup_call *c, unsigned char cug_indicator, const char *
 
 void isup_set_interworking_indicator(struct isup_call *c, unsigned char interworking_indicator);
 
+void isup_set_forward_indicator_pmbits(struct isup_call *c, unsigned char pmbits);
+
 void isup_set_echocontrol(struct isup_call *c, unsigned char ec);
 
 enum {
