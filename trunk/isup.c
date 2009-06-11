@@ -49,8 +49,6 @@
 
 #define CODE_CCITT 0x0
 
-#define LOC_PRIV_NET_LOCAL_USER 0x1
-
 struct parm_func {
 	int parm;
 	char *name;
@@ -4347,7 +4345,7 @@ int isup_rel(struct ss7 *ss7, struct isup_call *c, int cause)
 
 	c->cause = cause;
 	c->causecode = CODE_CCITT;
-	c->causeloc = LOC_PRIV_NET_LOCAL_USER;
+	c->causeloc = ss7->cause_location;
 
 	res = isup_send_message(ss7, c, ISUP_REL, rel_params);
 

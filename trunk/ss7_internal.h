@@ -67,6 +67,8 @@
 /* MTP3 timers */
 #define MTP3_MAX_TIMERS 32
 
+#define LOC_PRIV_NET_LOCAL_USER 0x1
+
 typedef unsigned int point_code;
 
 struct routing_label {
@@ -119,6 +121,7 @@ struct ss7 {
 	unsigned int flags;
 	unsigned char cb_seq;
 	int linkset_up_timer;
+	unsigned char cause_location;
 };
 
 /* Getto hacks for developmental purposes */

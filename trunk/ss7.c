@@ -350,6 +350,7 @@ struct ss7 *ss7_new(int switchtype)
 	
 	s->flags = SS7_ISDN_ACCES_INDICATOR;
 	s->sls_shift = 0;
+	s->cause_location = LOC_PRIV_NET_LOCAL_USER;
 
 	return s;
 }
@@ -399,6 +400,14 @@ void ss7_clear_flags(struct ss7 *ss7, unsigned int flags)
 	if (!ss7)
 		return;
 	ss7->flags &= ~flags;
+}
+
+void ss7_set_cause_location(struct ss7 *ss7, unsigned char location)
+{
+    if (!ss7)
+		return;
+
+    ss7->cause_location = 0x0f & location;
 }
 
 int ss7_write(struct ss7 *ss7, int fd)

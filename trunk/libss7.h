@@ -461,6 +461,8 @@ void ss7_destroy(struct ss7 *ss7);
 
 void ss7_set_flags(struct ss7 *ss7, unsigned int flags);
 
+void ss7_set_cause_location(struct ss7 *ss7, unsigned char location);
+
 void ss7_set_sls_shift(struct ss7 *ss7, unsigned char shift);
 
 void ss7_clear_flags(struct ss7 *ss7, unsigned int flags);
