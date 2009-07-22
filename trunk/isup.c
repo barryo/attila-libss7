@@ -2508,6 +2508,7 @@ static struct isup_call * __isup_new_call(struct ss7 *ss7, int nolink)
 {
 	struct isup_call *c, *cur;
 	c = calloc(1, sizeof(struct isup_call));
+	memset(c, 0, sizeof(struct isup_call));
 	if (!c)
 		return NULL;
 
