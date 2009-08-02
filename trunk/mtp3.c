@@ -2077,7 +2077,7 @@ static inline void mtp3_new_adjsp(struct ss7 *ss7, struct mtp2 *link)
 	}
 	
 	
-	new = calloc(1, sizeof(struct mtp2));
+	new = calloc(1, sizeof(struct adjecent_sp));
 
 	if (!new) {
 		ss7_error(ss7, "Couldn't allocate new adjecent SP\n");
