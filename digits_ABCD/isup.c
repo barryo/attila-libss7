@@ -254,6 +254,18 @@ static char char2digit(char localchar)
 			return 8;
 		case '9':
 			return 9;
+		case 'a':
+		case 'A':
+		    return 0xa;
+		case 'b':
+		case 'B':
+		    return 0xb;
+		case 'c':
+		case 'C':
+		    return 0xc;
+		case 'd':
+		case 'D':
+		    return 0xd;
 		case '#':
 			return 0xf;
 		default:
@@ -284,6 +296,14 @@ static char digit2char(unsigned char digit)
 			return '8';
 		case 9:
 			return '9';
+		case 0xa:
+			return 'A';
+		case 0xb:
+			return 'B';
+		case 0xc:
+			return 'C';
+		case 0xd:
+			return 'D';
 		case 15:
 			return '#';
 		default:
