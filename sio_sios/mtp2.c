@@ -290,18 +290,6 @@ int mtp2_transmit(struct mtp2 *link)
 	struct ss7_msg *m = NULL;
 	int retransmit = 0;
 
-	if (link->send_sios) {
-		link->send_sios = 0;
-		make_lssu(link, buf, &size, LSSU_SIOS);
-		h = buf;
-
-		res = write(link->fd, h, size);
-
-		if (res > 0) {
-			mtp2_dump(link, '>', h, size - 2);
-		}
-	}
-
 	if (link->retransmit_pos) {
 		struct mtp_su_head *h1;
 		m = link->retransmit_pos;
@@ -356,6 +344,21 @@ int mtp2_transmit(struct mtp2 *link)
 			}
 		}
 
+		if (h == buf) { /* We just sent a non MSU */
+			link->flags &= ~MTP2_FLAG_WRITE;
+		}
+	}
+
+	if (link->send_sios) {
+		link->send_sios = 0;
+		make_lssu(link, buf, &size, LSSU_SIOS);
+		h = buf;
+
+		res = write(link->fd, h, size);
+
+		if (res > 0) {
+			mtp2_dump(link, '>', h, size - 2);
+		}
 		if (h == buf) { /* We just sent a non MSU */
 			link->flags &= ~MTP2_FLAG_WRITE;
 		}
