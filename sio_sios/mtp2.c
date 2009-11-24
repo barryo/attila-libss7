@@ -487,7 +487,8 @@ static void t2_expiry(void * data)
 	//mtp2_setstate(link, MTP_IDLE);
 	link->state = MTP_NOTALIGNED;
 	link->t2 = ss7_schedule_event(link->master, link->timers.t2, t2_expiry, link);
-	mtp2_lssu(link, LSSU_SIOS);
+	mtp2_lssu(link, LSSU_SIO);
+	link->send_sios = 1;
 	return;
 }
 
