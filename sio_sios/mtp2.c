@@ -290,6 +290,18 @@ int mtp2_transmit(struct mtp2 *link)
 	struct ss7_msg *m = NULL;
 	int retransmit = 0;
 
+	if (link->send_sios) {
+		link->send_sios = 0;
+		make_lssu(link, buf, &size, LSSU_SIOS);
+		h = buf;
+
+		res = write(link->fd, h, size);
+
+		if (res > 0) {
+			mtp2_dump(link, '>', h, size - 2);
+		}
+	}
+
 	if (link->retransmit_pos) {
 		struct mtp_su_head *h1;
 		m = link->retransmit_pos;
@@ -472,8 +484,10 @@ static void t2_expiry(void * data)
 {
 	struct mtp2 *link = data;
 
-	mtp2_setstate(link, MTP_IDLE);
-
+	//mtp2_setstate(link, MTP_IDLE);
+	link->state = MTP_NOTALIGNED;
+	link->t2 = ss7_schedule_event(link->master, link->timers.t2, t2_expiry, link);
+	mtp2_lssu(link, LSSU_SIOS);
 	return;
 }
 
@@ -658,6 +672,10 @@ static int lssu_rx(struct mtp2 *link, struct mtp_su_head *h, int len)
 	if (lssutype == LSSU_SIE)
 		link->emergency = 1;
 
+	if (lssutype == LSSU_SIOS && link->state == MTP_NOTALIGNED) {
+		link->send_sios = 1;
+	}
+
 	switch (link->state) {
 		case MTP_IDLE:
 		case MTP_NOTALIGNED:
@@ -788,6 +806,7 @@ struct mtp2 * mtp2_new(int fd, unsigned int switchtype)
 
 	new->fd = fd;
 	new->autotxsutype = LSSU_SIOS;
+	new->send_sios = 0;
 	new->lastsurxd = -1;
 	new->lastsutxd = -1;
 
@@ -852,11 +871,11 @@ void mtp2_dump(struct mtp2 *link, char prefix, unsigned char *buf, int len)
 			ss7_message(link->master, "%c[%d] FISU\n", prefix, link->slc);
 			break; 
 		case 1:
-			if (prefix == '<' && link->lastsurxd == h->data[0])
-				return;
-			if (prefix == '>' && link->lastsutxd == h->data[0])
-				return;
-			else
+			//if (prefix == '<' && link->lastsurxd == h->data[0])
+			//	return;
+			//if (prefix == '>' && link->lastsutxd == h->data[0])
+			//	return;
+			//else
 				link->lastsutxd = h->data[0];
 			switch (h->data[0]) {
 				case LSSU_SIOS:

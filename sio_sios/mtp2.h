@@ -144,6 +144,7 @@ struct mtp2 {
 	unsigned int dpc;
 
 	int autotxsutype;
+        int send_sios;
 	int lastsurxd;
 	int lastsutxd;
 
