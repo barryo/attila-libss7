@@ -83,6 +83,7 @@
 #define MTP_ALIGNEDREADY	4
 #define MTP_INSERVICE		5
 #define MTP_ALARM		6
+#define MTP_DEACTIVATED 7
 
 struct mtp_su_head {
 	/* Common header for all signaling units */
@@ -180,5 +181,7 @@ char *linkstate2strext(int linkstate);
 void update_txbuf(struct mtp2 *link, struct ss7_msg **buf, unsigned char upto);
 int len_buf(struct ss7_msg *buf);
 void flush_bufs(struct mtp2 *link);
+void mtp2_deactivate(struct mtp2 *link);
+void mtp2_activate(struct mtp2 *link);
 
 #endif /* _SS7_MTP_H */

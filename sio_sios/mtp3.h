@@ -217,4 +217,6 @@ void mtp3_free_co(struct mtp2 *link);
 
 void mtp3_destroy_all_routes(struct adjecent_sp *adj_sp);
 
+struct mtp2 * slc_to_mtp2(struct ss7 *ss7, unsigned int slc);
+
 #endif /* _MTP3_H */

@@ -620,3 +620,17 @@ void ss7_show_linkset(struct ss7 *ss7, void (* cust_printf)(int fd, const char *
 		} /* links */
 	} /* sps */
 }
+
+void ss7_mtp2_deactivate(struct ss7 *ss7, int slc, int deactivate)
+{
+	struct mtp2 *link = slc_to_mtp2(ss7, slc);
+
+	if (!link)
+		return;
+
+	if (deactivate) {
+		mtp2_deactivate(link);
+	} else {
+		mtp2_activate(link);
+	}
+}

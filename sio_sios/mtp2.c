@@ -79,6 +79,9 @@ static inline char * linkstate2str(int linkstate)
 		case MTP_ALARM:
 			statestr = "ALARM";
 			break;
+		case MTP_DEACTIVATED:
+			statestr = "DEACTIVATED";
+			break;
 		default:
 			statestr = "UNKNOWN";
 	}
@@ -673,7 +676,7 @@ static int lssu_rx(struct mtp2 *link, struct mtp_su_head *h, int len)
 	if (lssutype == LSSU_SIE)
 		link->emergency = 1;
 
-	if (lssutype == LSSU_SIOS && link->state == MTP_NOTALIGNED) {
+	if (lssutype == LSSU_SIOS && link->state != MTP_PROVING) {
 		link->send_sios = 1;
 	}
 
@@ -778,6 +781,29 @@ int mtp2_start(struct mtp2 *link, int emergency)
 		return 0;
 }
 
+void mtp2_deactivate(struct mtp2 *link)
+{
+	reset_mtp(link);
+	mtp2_setstate(link, MTP_DEACTIVATED);
+	link->state = MTP_DEACTIVATED;
+	ss7_schedule_del(link->master, &link->t1);
+	ss7_schedule_del(link->master, &link->t2);
+	ss7_schedule_del(link->master, &link->t3);
+	ss7_schedule_del(link->master, &link->t4);
+	ss7_schedule_del(link->master, &link->t7);
+	mtp2_lssu(link, LSSU_SIOS);
+}
+
+void mtp2_activate(struct mtp2 *link)
+{
+	if (link->state == MTP_DEACTIVATED) {
+		reset_mtp(link);
+		link->state = MTP_IDLE;
+		mtp2_setstate(link, MTP_NOTALIGNED);
+		link->send_sios = 1;
+	}
+}
+
 int mtp2_stop(struct mtp2 *link)
 {
 	return mtp2_setstate(link, MTP_IDLE);
@@ -785,13 +811,15 @@ int mtp2_stop(struct mtp2 *link)
 
 int mtp2_alarm(struct mtp2 *link)
 {
-	link->state = MTP_ALARM;
+	if (link->state != MTP_DEACTIVATED)
+		link->state = MTP_ALARM;
 	return 0;
 }
 
 int mtp2_noalarm(struct mtp2 *link)
 {
-	link->state = MTP_IDLE;
+	if (link->state != MTP_DEACTIVATED)
+		link->state = MTP_IDLE;
 	return 0;
 }
 
@@ -921,6 +949,9 @@ int mtp2_receive(struct mtp2 *link, unsigned char *buf, int len)
 {
 	struct mtp_su_head *h = (struct mtp_su_head *)buf;
 	len -= 2; /* Strip the CRC off */
+
+	if (link->state == MTP_DEACTIVATED)
+		return 0;
 
 	if (len < MTP2_SIZE) {
 		ss7_message(link->master, "Got message smaller than the minimum SS7 SU length.  Dropping\n");

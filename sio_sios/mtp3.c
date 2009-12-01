@@ -47,8 +47,6 @@ char testmessage[] = "2564286288";
 /* Routing label size */
 #define rl_size(ss7) (((ss7)->switchtype == SS7_ITU) ? 4 : 7)
 
-static struct mtp2 * slc_to_mtp2(struct ss7 *ss7, unsigned int slc);
-
 static char * userpart2str(unsigned char userpart)
 {
 	switch (userpart) {
@@ -1830,7 +1828,7 @@ static void mtp3_event_link_down(struct mtp2 *link)
 	mtp3_link_failed(link);
 }
 
-static struct mtp2 * slc_to_mtp2(struct ss7 *ss7, unsigned int slc)
+struct mtp2 * slc_to_mtp2(struct ss7 *ss7, unsigned int slc)
 {
 	int i = 0;
 	struct mtp2 *link = NULL;

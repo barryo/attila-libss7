@@ -639,4 +639,6 @@ char * mtp3_net_mng(struct ss7 *ss7, unsigned int slc, char *cmd, unsigned int p
 void mtp3_init_restart(struct ss7 *ss7, int slc);
 
 int ss7_set_mtp3_timer(struct ss7 *ss7, char *name, int ms);
+
+void ss7_mtp2_deactivate(struct ss7 *ss7, int slc, int deactivate);
 #endif /* _LIBSS7_H */
