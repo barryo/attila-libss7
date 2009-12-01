@@ -540,6 +540,7 @@ int mtp2_setstate(struct mtp2 *link, int newstate)
 		case MTP_ALARM:
 			return 0;
 		case MTP_IDLE:
+			ss7_schedule_del(link->master, &link->t2);
 			link->t2 = ss7_schedule_event(link->master, link->timers.t2, t2_expiry, link);
 			if (mtp2_lssu(link, LSSU_SIO)) {
 				mtp_error(link->master, "Unable to transmit initial LSSU\n");
@@ -811,8 +812,14 @@ int mtp2_stop(struct mtp2 *link)
 
 int mtp2_alarm(struct mtp2 *link)
 {
-	if (link->state != MTP_DEACTIVATED)
+	if (link->state != MTP_DEACTIVATED) {
 		link->state = MTP_ALARM;
+		ss7_schedule_del(link->master, &link->t1);
+		ss7_schedule_del(link->master, &link->t2);
+		ss7_schedule_del(link->master, &link->t3);
+		ss7_schedule_del(link->master, &link->t4);
+		ss7_schedule_del(link->master, &link->t7);
+	}
 	return 0;
 }
 
