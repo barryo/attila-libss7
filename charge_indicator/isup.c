@@ -3470,6 +3470,7 @@ int isup_receive(struct ss7 *ss7, struct mtp2 *link, struct routing_label *rl, u
 			e->acm.opc = opc; /* keep OPC information */
 			e->acm.called_party_status_ind = c->called_party_status_ind;
 			e->acm.echocontrol_ind = c->echocontrol_ind;
+			e->acm.charge_indicator = c->charge_indicator;
 			e->acm.got_sent_msg = c->got_sent_msg;
 			return 0;
 		case ISUP_CON:
@@ -3496,6 +3497,7 @@ int isup_receive(struct ss7 *ss7, struct mtp2 *link, struct routing_label *rl, u
 			e->con.connected_screening_ind = c->connected_screening_ind;
 			strncpy(e->con.connected_num, c->connected_num, sizeof(e->con.connected_num));
 			e->con.echocontrol_ind = c->echocontrol_ind;
+			e->con.charge_indicator = c->charge_indicator;
 			e->con.got_sent_msg = c->got_sent_msg;
 			return 0;
 		case ISUP_ANM:
