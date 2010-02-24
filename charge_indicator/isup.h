@@ -264,6 +264,7 @@ struct isup_call {
 	unsigned char called_party_status_ind;
 	unsigned char local_echocontrol_ind;
 	unsigned char echocontrol_ind;
+        unsigned char charge_indicator;
 	unsigned char susres_ind;
 	unsigned char inr_ind[2];
 	unsigned char inf_ind[2];

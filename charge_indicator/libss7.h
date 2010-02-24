@@ -272,6 +272,7 @@ typedef struct {
 	unsigned char connected_presentation_ind;
 	unsigned char connected_screening_ind;
 	unsigned char echocontrol_ind;
+        unsigned char charge_indicator;
 } ss7_event_con;
 
 typedef struct {
@@ -306,6 +307,7 @@ typedef struct {
 	/* Backward call indicator */
 	unsigned char called_party_status_ind;
 	unsigned char echocontrol_ind;
+        unsigned char charge_indicator;
 } ss7_event_acm;
 
 typedef struct {
@@ -626,6 +628,8 @@ void isup_set_jip_digits(struct isup_call *c, const char *jip_number);
 void isup_set_lspi(struct isup_call *c, const char *lspi_ident, unsigned char lspi_type, unsigned char lspi_scheme, unsigned char lspi_context);
 
 void isup_set_callref(struct isup_call *c, unsigned int call_ref_ident, unsigned int call_ref_pc);
+
+void isup_set_charge_indicator(struct isup_call *c, unsigned char charge_indicator);
 
 /* End of call related sets */
 

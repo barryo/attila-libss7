@@ -686,6 +686,7 @@ static FUNC_RECV(backward_call_ind_receive)
 {
 	c->called_party_status_ind = (parm[0] >> 2) & 0x3;
 	c->echocontrol_ind = (parm[1] >> 5) & 0x1;
+	c->charge_indicator = parm[0] & 0x3;
 	return 2;
 }
 
@@ -699,6 +700,8 @@ static FUNC_SEND(backward_call_ind_transmit)
 
 	if (ss7->flags & SS7_ISDN_ACCES_INDICATOR)
 		parm[1] |= 0x10;
+
+	parm[0] |= c->charge_indicator & 0x3;
 
 	return 2;
 }
@@ -2700,6 +2703,11 @@ void isup_set_callref(struct isup_call *c, unsigned int call_ref_ident, unsigned
 {
 	c->call_ref_ident = call_ref_ident;
 	c->call_ref_pc = call_ref_pc;
+}
+
+void isup_set_charge_indicator(struct isup_call *c, unsigned char charge_indicator)
+{
+	c->charge_indicator = charge_indicator & 0x3;
 }
 
 void isup_init_call(struct ss7 *ss7, struct isup_call *c, int cic, unsigned int dpc)
