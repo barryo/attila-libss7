@@ -4882,7 +4882,7 @@ static void isup_timer_expiry(void *data)
 			ss7_hangup(param->ss7, param->c->cic, param->c->dpc, 31, SS7_HANGUP_SEND_REL);
 			break;
 		case ISUP_TIMER_T8:
-			isup_rel(param->ss7, param->c, 16); /* I'm not sure it's the right cause code */
+			isup_rel(param->ss7, param->c, 41);
 			break;
 		case ISUP_TIMER_T5:
 			ss7_notinservice(param->ss7, param->c->cic, param->c->dpc);
